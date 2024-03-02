@@ -125,7 +125,7 @@ include("transition.jl")
 include("obs_models.jl")
 include("initial.jl")
 
-function POMDPs.reward(p::LaserTagPOMDP, s::LTState, a::Int, sp::LTState)
+function POMDPs.reward(p::LaserTagPOMDP, s::LTState, a::Int)
     if s.terminal
         return 0.0
     end
