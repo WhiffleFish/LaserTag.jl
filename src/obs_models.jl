@@ -94,3 +94,34 @@ function Distributions.pdf(d::LTObsDist{DESPOTEmu}, m::DMeas)
 end
 
 POMDPs.observation(p::LaserTagPOMDP, sp::LTState) = LTObsDist(p.dcache[sp], p.obs_model)
+
+function POMDPs.support(d::LTObsDist{DESPOTEmu})
+    d.distances == CD_SAME_LOC && return [D_SAME_LOC]
+    meas = MVector{8, Int}(undef)
+    for i in 1:4
+        meas[i] = max(0, floor(Int, n_clear_cells(d.distances, i)+1))
+    end
+    for i in 5:8
+        meas[i] = max(0, floor(Int, (n_clear_cells(d.distances, i)+1)*sqrt(2)))
+    end
+    return Iterators.map(
+        MVector{8, Int}, 
+        Iterators.product((0:i for i ∈ meas)...)
+    )
+end
+
+function obs_dims(p::LaserTagPOMDP)
+    (;n_rows, n_cols) = p.floor
+    diag = floor(Int,min(n_rows, n_cols)*sqrt(2))
+    return (
+        -1:n_rows, -1:n_cols, -1:n_rows, -1:n_cols,
+        -1:diag, -1:diag, -1:diag, -1:diag
+    )
+end
+
+POMDPs.observations(p::LaserTagPOMDP) = Iterators.map(
+    MVector{8, Int}, 
+    Iterators.product(obs_dims(p)...)
+)
+
+POMDPs.obsindex(p::LaserTagPOMDP, o) = LinearIndices(obs_dims(p))[(o .+ 2)...]
